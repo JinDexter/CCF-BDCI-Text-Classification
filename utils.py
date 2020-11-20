@@ -10,6 +10,32 @@ import math
 PAD, CLS = '[PAD]', '[CLS]'  # padding符号, bert中综合信息符号
 
 
+def load_dataset_pred(path, pad_size=32):
+  contents = []
+  data = pd.read_csv(path, engine="python", encoding="utf_8_sig")
+  #with open(path, 'r', encoding='UTF-8') as f:
+  for i in tqdm(range(data.shape[0])):
+      content = data.iloc[i][1]
+      if not isinstance(content, Iterable):
+        print(content)
+        continue
+      token = config.tokenizer.tokenize(content)
+      token = [CLS] + token
+      seq_len = len(token)
+      mask = []
+      token_ids = config.tokenizer.convert_tokens_to_ids(token)
+
+      if pad_size:
+        if len(token) < pad_size:
+          mask = [1] * len(token_ids) + [0] * (pad_size - len(token))
+          token_ids += ([0] * (pad_size - len(token)))
+        else:
+          mask = [1] * pad_size
+          token_ids = token_ids[:pad_size]
+          seq_len = pad_size
+      contents.append((token_ids,0, seq_len, mask))
+  return contents
+
 def build_dataset(config):
 
     def load_dataset(path, pad_size=32):
